@@ -59,8 +59,9 @@ ${retailData}`
     if (scriptData.error) return NextResponse.json({ error: scriptData.error.message }, { status: 500 });
     const script = scriptData.content.map((b) => b.text || "").join("\n");
 
-    if (!elevenKey) {
-      return NextResponse.json({ script, audio: null });
+if (!ttsRes.ok) {
+      const errText = await ttsRes.text();
+      return NextResponse.json({ script, audio: null, ttsError: errText });
     }
 
     const ttsRes = await fetch("https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM", {
@@ -82,7 +83,7 @@ ${retailData}`
 
     const audioBuffer = await ttsRes.arrayBuffer();
     const audioBase64 = Buffer.from(audioBuffer).toString("base64");
-    return NextResponse.json({ script, audio: audioBase64 });
+    return NextResponse.json({ script, audio: audioBase64, ttsError: null });
 
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
