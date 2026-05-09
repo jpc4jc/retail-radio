@@ -8,7 +8,8 @@ async function fetchFredSeries(seriesId, apiKey) {
   const latest = parseFloat(data.observations[0].value);
   const prior = parseFloat(data.observations[1].value);
   const change = (((latest - prior) / prior) * 100).toFixed(1);
-  return { latest: latest.toFixed(1), change, date: data.observations[0].date };
+  const formatted = latest >= 1000 ? (latest / 1000).toFixed(1) + "T" : latest.toFixed(1);
+  return { latest: formatted, change, date: data.observations[0].date };
 }
 
 export async function GET() {
@@ -16,14 +17,13 @@ export async function GET() {
     const fredKey = process.env.FRED_API_KEY;
     if (!fredKey) return NextResponse.json({ error: "FRED_API_KEY not configured." }, { status: 500 });
 
-    const [retail, food, ecomm, gas, grocery, clothing, electronics, unemployment, credit, spending, confidence] = await Promise.all([
+    const [retail, food, ecomm, gas, grocery, clothing, unemployment, credit, spending, confidence] = await Promise.all([
       fetchFredSeries("RSXFS", fredKey),
       fetchFredSeries("RSFSDP", fredKey),
       fetchFredSeries("ECOMSA", fredKey),
       fetchFredSeries("RSGASS", fredKey),
       fetchFredSeries("RSGCSN", fredKey),
       fetchFredSeries("RSCCASN", fredKey),
-      fetchFredSeries("RSBPBSN", fredKey),
       fetchFredSeries("UNRATE", fredKey),
       fetchFredSeries("REVOLSL", fredKey),
       fetchFredSeries("PCE", fredKey),
@@ -37,7 +37,6 @@ export async function GET() {
       { label: "Gasoline Stations", val: gas ? `$${gas.latest}B` : "—", change: gas ? `${parseFloat(gas.change) > 0 ? "+" : ""}${gas.change}%` : "", date: gas?.date || "" },
       { label: "Grocery Stores", val: grocery ? `$${grocery.latest}B` : "—", change: grocery ? `${parseFloat(grocery.change) > 0 ? "+" : ""}${grocery.change}%` : "", date: grocery?.date || "" },
       { label: "Clothing & Accessories", val: clothing ? `$${clothing.latest}B` : "—", change: clothing ? `${parseFloat(clothing.change) > 0 ? "+" : ""}${clothing.change}%` : "", date: clothing?.date || "" },
-      { label: "Electronics & Appliances", val: electronics ? `$${electronics.latest}B` : "—", change: electronics ? `${parseFloat(electronics.change) > 0 ? "+" : ""}${electronics.change}%` : "", date: electronics?.date || "" },
       { label: "Unemployment Rate", val: unemployment ? `${unemployment.latest}%` : "—", change: unemployment ? `${parseFloat(unemployment.change) > 0 ? "+" : ""}${unemployment.change}%` : "", date: unemployment?.date || "" },
       { label: "Revolving Credit", val: credit ? `$${credit.latest}B` : "—", change: credit ? `${parseFloat(credit.change) > 0 ? "+" : ""}${credit.change}%` : "", date: credit?.date || "" },
       { label: "Consumer Spending", val: spending ? `$${spending.latest}B` : "—", change: spending ? `${parseFloat(spending.change) > 0 ? "+" : ""}${spending.change}%` : "", date: spending?.date || "" },
