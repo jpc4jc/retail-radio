@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -19,7 +19,7 @@ const styles = `
   .divider { height: 1px; background: var(--border); margin: 0 0 40px; }
   .player-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 32px; margin-bottom: 24px; }
   .waveform { display: flex; align-items: center; gap: 3px; height: 48px; margin-bottom: 24px; }
-  .bar { width: 3px; border-radius: 2px; background: var(--border); }
+  .bar { width: 3px; border-radius: 2px; background: var(--border); transition: background 0.1s; }
   .bar.active { background: var(--accent); }
   .controls { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
   .play-btn { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; transition: all 0.15s; }
@@ -53,6 +53,7 @@ const styles = `
   .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; }
+  .voice-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #4DFF91; letter-spacing: 2px; margin-top: 6px; }
 `;
 
 const kpis = [
@@ -77,25 +78,48 @@ const tickerItems = [
 
 const bars = Array.from({ length: 52 }, () => Math.random() * 30 + 8);
 
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ":" + (sec < 10 ? "0" : "") + sec;
+}
+
 export default function HomePage() {
   const [script, setScript] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [speaking, setSpeaking] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [useElevenLabs, setUseElevenLabs] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [timeDisplay, setTimeDisplay] = useState("0:00 / 0:00");
+  const audioRef = useRef(null);
+  const audioBase64Ref = useRef(null);
+  const animRef = useRef(null);
 
   const generate = async () => {
     setLoading(true);
     setScript("");
-    setStatus("Writing broadcast script...");
+    setStatus("Fetching live data and writing script...");
     setGenerated(false);
+    setSpeaking(false);
+    setProgress(0);
+    setTimeDisplay("0:00 / 0:00");
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     try {
       const res = await fetch("/api/broadcast", { method: "POST" });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setScript(data.script);
       setGenerated(true);
-      setStatus("Script ready. Press play to hear the broadcast.");
+      if (data.audio) {
+        audioBase64Ref.current = data.audio;
+        setUseElevenLabs(true);
+        setStatus("AI voice ready. Press play to hear the broadcast.");
+      } else {
+        setUseElevenLabs(false);
+        setStatus("Script ready. Press play to hear the broadcast.");
+      }
     } catch (e) {
       setStatus("Error: " + e.message);
     }
@@ -103,7 +127,38 @@ export default function HomePage() {
   };
 
   const speak = () => {
-    if (!script) return;
+    if (!generated) return;
+
+    if (useElevenLabs && audioBase64Ref.current) {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        setSpeaking(false);
+        setStatus("Paused.");
+        cancelAnimationFrame(animRef.current);
+        return;
+      }
+      if (!audioRef.current) {
+        const audio = new Audio("data:audio/mpeg;base64," + audioBase64Ref.current);
+        audioRef.current = audio;
+        audio.addEventListener("timeupdate", () => {
+          if (audio.duration) {
+            setProgress((audio.currentTime / audio.duration) * 100);
+            setTimeDisplay(formatTime(audio.currentTime) + " / " + formatTime(audio.duration));
+          }
+        });
+        audio.addEventListener("ended", () => {
+          setSpeaking(false);
+          setStatus("Broadcast complete.");
+          setProgress(0);
+          cancelAnimationFrame(animRef.current);
+        });
+      }
+      audioRef.current.play();
+      setSpeaking(true);
+      setStatus("On air...");
+      return;
+    }
+
     if (speaking) {
       window.speechSynthesis.cancel();
       setSpeaking(false);
@@ -163,10 +218,22 @@ export default function HomePage() {
               {speaking ? "⏸" : "▶"}
             </button>
             <div className="progress-wrap">
-              <input type="range" className="progress" min="0" max="100" defaultValue="0" readOnly />
+              <input
+                type="range" className="progress" min="0" max="100"
+                value={progress} step="0.1"
+                onChange={(e) => {
+                  if (audioRef.current && audioRef.current.duration) {
+                    audioRef.current.currentTime = (e.target.value / 100) * audioRef.current.duration;
+                    setProgress(parseFloat(e.target.value));
+                  }
+                }}
+              />
             </div>
-            <span className="time">{speaking ? "ON AIR" : "00:00"}</span>
+            <span className="time">{speaking ? timeDisplay : "0:00"}</span>
           </div>
+          {useElevenLabs && generated && (
+            <div className="voice-badge">● ELEVENLABS AI VOICE</div>
+          )}
         </div>
         <div className="script-box">
           <div className="script-label">Broadcast Script</div>
