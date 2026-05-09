@@ -33,18 +33,18 @@ const styles = `
   .script-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
   .script-text { font-size: 15px; color: #ccc; line-height: 1.8; white-space: pre-wrap; }
   .script-placeholder { color: #444; font-style: italic; font-size: 14px; }
-  .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; justify-content: center; }
-  .kpi-top { display: flex; gap: 10px; justify-content: center; width: 100%; }
-  .kpi-bottom { display: flex; gap: 10px; justify-content: center; width: 100%; }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; width: 185px; flex-shrink: 0; }
+  .kpi-section { margin-bottom: 32px; }
+  .kpi-section-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #555; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; width: 170px; flex-shrink: 0; }
   .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-  .kpi-val { font-size: 22px; font-weight: 500; color: var(--text); }
+  .kpi-val { font-size: 20px; font-weight: 500; color: var(--text); }
   .kpi-change { font-size: 12px; margin-top: 2px; }
   .kpi-date { font-size: 10px; color: #555; margin-top: 3px; font-family: 'DM Mono', monospace; }
   .up { color: #4DFF91; }
   .down { color: var(--accent); }
   .ticker-wrap { overflow: hidden; border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 32px; }
-  .ticker { display: flex; gap: 40px; white-space: nowrap; animation: scroll 28s linear infinite; }
+  .ticker { display: flex; gap: 40px; white-space: nowrap; animation: scroll 36s linear infinite; }
   .ticker-item { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
   .ticker-item span { color: var(--text); font-weight: 500; }
   @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
@@ -67,6 +67,15 @@ function formatTime(s) {
   return m + ":" + (sec < 10 ? "0" : "") + sec;
 }
 
+const KpiCard = ({ k }) => (
+  <div className="kpi">
+    <div className="kpi-label">{k.label}</div>
+    <div className="kpi-val">{k.val}</div>
+    {k.change && <div className={"kpi-change " + (k.change.startsWith("+") ? "up" : "down")}>{k.change.startsWith("+") ? "▲" : "▼"} {k.change}</div>}
+    {k.date && <div className="kpi-date">{k.date}</div>}
+  </div>
+);
+
 export default function HomePage() {
   const [script, setScript] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,15 +86,11 @@ export default function HomePage() {
   const [progress, setProgress] = useState(0);
   const [timeDisplay, setTimeDisplay] = useState("0:00 / 0:00");
   const [kpis, setKpis] = useState(null);
-  const [ticker, setTicker] = useState([
-    ["Total Retail", "loading...", ""],
-    ["E-Commerce", "loading...", ""],
-    ["Food Services", "loading...", ""],
-    ["Consumer Confidence", "loading...", ""],
-    ["Consumer Spending", "loading...", ""],
-  ]);
+  const [ticker, setTicker] = useState([]);
   const audioRef = useRef(null);
   const audioBase64Ref = useRef(null);
+
+  const defaultKpis = Array(11).fill({ label: "—", val: "—", change: "", date: "" });
 
   useEffect(() => {
     fetch("/api/kpis")
@@ -93,17 +98,13 @@ export default function HomePage() {
       .then((data) => {
         if (data.kpis) {
           setKpis(data.kpis);
-          setTicker([
-            ["Total Retail", data.kpis[0].val, data.kpis[0].change],
-            ["E-Commerce", data.kpis[2].val, data.kpis[2].change],
-            ["Food Services", data.kpis[1].val, data.kpis[1].change],
-            ["Consumer Confidence", data.kpis[3].val, data.kpis[3].change],
-            ["Consumer Spending", data.kpis[4].val, data.kpis[4].change],
-          ]);
+          setTicker(data.kpis.map(k => [k.label, k.val, k.change]));
         }
       })
       .catch(() => {});
   }, []);
+
+  const displayKpis = kpis || defaultKpis;
 
   const generate = async () => {
     setLoading(true);
@@ -182,25 +183,6 @@ export default function HomePage() {
     if (script) { navigator.clipboard.writeText(script); setStatus("Script copied to clipboard."); }
   };
 
-  const defaultKpis = [
-    { label: "Total Retail", val: "—", change: "", date: "" },
-    { label: "Food Services", val: "—", change: "", date: "" },
-    { label: "E-Commerce", val: "—", change: "", date: "" },
-    { label: "Consumer Confidence", val: "—", change: "", date: "" },
-    { label: "Consumer Spending", val: "—", change: "", date: "" },
-  ];
-
-  const displayKpis = kpis || defaultKpis;
-
-  const KpiCard = ({ k }) => (
-    <div className="kpi">
-      <div className="kpi-label">{k.label}</div>
-      <div className="kpi-val">{k.val}</div>
-      {k.change && <div className={"kpi-change " + (k.change.startsWith("+") ? "up" : "down")}>{k.change.startsWith("+") ? "▲" : "▼"} {k.change}</div>}
-      {k.date && <div className="kpi-date">{k.date}</div>}
-    </div>
-  );
-
   return (
     <>
       <style>{styles}</style>
@@ -214,21 +196,30 @@ export default function HomePage() {
           <p className="hero-sub">AI-generated retail market analysis — written and broadcast in seconds.</p>
         </section>
         <div className="divider" />
-        <div className="kpi-row">
-          <div className="kpi-top">
+
+        <div className="kpi-section">
+          <div className="kpi-section-label">// Retail Sales</div>
+          <div className="kpi-row">
             {displayKpis.slice(0, 3).map((k, i) => <KpiCard key={i} k={k} />)}
           </div>
-          <div className="kpi-bottom">
-            {displayKpis.slice(3, 5).map((k, i) => <KpiCard key={i} k={k} />)}
+          <div className="kpi-section-label" style={{marginTop: "16px"}}>// Categories</div>
+          <div className="kpi-row">
+            {displayKpis.slice(3, 7).map((k, i) => <KpiCard key={i} k={k} />)}
+          </div>
+          <div className="kpi-section-label" style={{marginTop: "16px"}}>// Consumer Health</div>
+          <div className="kpi-row">
+            {displayKpis.slice(7, 11).map((k, i) => <KpiCard key={i} k={k} />)}
           </div>
         </div>
+
         <div className="ticker-wrap">
           <div className="ticker">
-            {[...ticker, ...ticker].map(([cat, val, note], i) => (
+            {ticker.length > 0 && [...ticker, ...ticker].map(([cat, val, note], i) => (
               <div className="ticker-item" key={i}>{cat}: <span>{val}</span>{note ? ` — ${note}` : ""}</div>
             ))}
           </div>
         </div>
+
         <div className="player-card">
           <div className="waveform">
             {bars.map((h, i) => (
@@ -257,6 +248,7 @@ export default function HomePage() {
             <div className="voice-badge">● ELEVENLABS AI VOICE</div>
           )}
         </div>
+
         <div className="script-box">
           <div className="script-label">Broadcast Script</div>
           {script
