@@ -8,8 +8,7 @@ async function fetchFredSeries(seriesId, apiKey) {
   const latest = parseFloat(data.observations[0].value);
   const prior = parseFloat(data.observations[1].value);
   const change = (((latest - prior) / prior) * 100).toFixed(1);
-  const formatted = latest > 1000 ? (latest / 1000).toFixed(1) + "T" : latest.toFixed(1);
-  return { latest: formatted, change, date: data.observations[0].date };
+  return { latest: latest.toFixed(1), change, date: data.observations[0].date };
 }
 
 export async function GET() {
@@ -29,31 +28,31 @@ export async function GET() {
       {
         label: "Total Retail",
         val: retail ? `$${retail.latest}B` : "—",
-        change: retail ? `${retail.change > 0 ? "+" : ""}${retail.change}%` : "",
+        change: retail ? `${parseFloat(retail.change) > 0 ? "+" : ""}${retail.change}%` : "",
         date: retail?.date || "",
       },
       {
         label: "Food Services",
         val: food ? `$${food.latest}B` : "—",
-        change: food ? `${food.change > 0 ? "+" : ""}${food.change}%` : "",
+        change: food ? `${parseFloat(food.change) > 0 ? "+" : ""}${food.change}%` : "",
         date: food?.date || "",
       },
       {
         label: "E-Commerce",
         val: ecomm ? `$${ecomm.latest}B` : "—",
-        change: ecomm ? `${ecomm.change > 0 ? "+" : ""}${ecomm.change}%` : "",
+        change: ecomm ? `${parseFloat(ecomm.change) > 0 ? "+" : ""}${ecomm.change}%` : "",
         date: ecomm?.date || "",
       },
       {
         label: "Consumer Confidence",
         val: confidence ? confidence.latest : "—",
-        change: confidence ? `${confidence.change > 0 ? "+" : ""}${confidence.change}%` : "",
+        change: confidence ? `${parseFloat(confidence.change) > 0 ? "+" : ""}${confidence.change}%` : "",
         date: confidence?.date || "",
       },
       {
         label: "Consumer Spending",
         val: spending ? `$${spending.latest}B` : "—",
-        change: spending ? `${spending.change > 0 ? "+" : ""}${spending.change}%` : "",
+        change: spending ? `${parseFloat(spending.change) > 0 ? "+" : ""}${spending.change}%` : "",
         date: spending?.date || "",
       },
     ];
