@@ -34,13 +34,13 @@ const styles = `
   .script-text { font-size: 15px; color: #ccc; line-height: 1.8; white-space: pre-wrap; }
   .script-placeholder { color: #444; font-style: italic; font-size: 14px; }
   .kpi-section { margin-bottom: 32px; }
-  .kpi-section-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #555; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .kpi-section-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #555; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; text-align: center; }
   .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px; }
   .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; width: 170px; flex-shrink: 0; }
-  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-  .kpi-val { font-size: 20px; font-weight: 500; color: var(--text); }
-  .kpi-change { font-size: 12px; margin-top: 2px; }
-  .kpi-date { font-size: 10px; color: #555; margin-top: 3px; font-family: 'DM Mono', monospace; }
+  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-align: center; }
+  .kpi-val { font-size: 20px; font-weight: 500; color: var(--text); text-align: center; }
+  .kpi-change { font-size: 12px; margin-top: 2px; text-align: center; }
+  .kpi-date { font-size: 10px; color: #555; margin-top: 3px; font-family: 'DM Mono', monospace; text-align: center; }
   .up { color: #4DFF91; }
   .down { color: var(--accent); }
   .ticker-wrap { overflow: hidden; border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 32px; }
@@ -56,7 +56,7 @@ const styles = `
   .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; }
-  .voice-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #4DFF91; letter-spacing: 2px; margin-top: 6px; }
+  .voice-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #4DFF91; letter-spacing: 2px; margin-top: 6px; text-align: center; }
 `;
 
 const bars = Array.from({ length: 52 }, () => Math.random() * 30 + 8);
@@ -90,7 +90,7 @@ export default function HomePage() {
   const audioRef = useRef(null);
   const audioBase64Ref = useRef(null);
 
-  const defaultKpis = Array(11).fill({ label: "—", val: "—", change: "", date: "" });
+  const defaultKpis = Array(10).fill({ label: "—", val: "—", change: "", date: "" });
 
   useEffect(() => {
     fetch("/api/kpis")
@@ -204,11 +204,11 @@ export default function HomePage() {
           </div>
           <div className="kpi-section-label" style={{marginTop: "16px"}}>// Categories</div>
           <div className="kpi-row">
-            {displayKpis.slice(3, 7).map((k, i) => <KpiCard key={i} k={k} />)}
+            {displayKpis.slice(3, 6).map((k, i) => <KpiCard key={i} k={k} />)}
           </div>
           <div className="kpi-section-label" style={{marginTop: "16px"}}>// Consumer Health</div>
           <div className="kpi-row">
-            {displayKpis.slice(7, 11).map((k, i) => <KpiCard key={i} k={k} />)}
+            {displayKpis.slice(6, 10).map((k, i) => <KpiCard key={i} k={k} />)}
           </div>
         </div>
 
