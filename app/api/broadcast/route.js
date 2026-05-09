@@ -1,26 +1,35 @@
 import { NextResponse } from "next/server";
 
+async function fetchFredSeries(seriesId, apiKey) {
+  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${apiKey}&sort_order=desc&limit=2&file_type=json`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.observations || data.observations.length === 0) return null;
+  const latest = parseFloat(data.observations[0].value);
+  const prior = parseFloat(data.observations[1].value);
+  const change = (((latest - prior) / prior) * 100).toFixed(1);
+  return { latest: latest.toFixed(1), change, date: data.observations[0].date };
+}
+
 export async function POST() {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured." }, { status: 500 });
-    }
+    const fredKey = process.env.FRED_API_KEY;
+
+    if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured." }, { status: 500 });
+    if (!fredKey) return NextResponse.json({ error: "FRED_API_KEY not configured." }, { status: 500 });
+
+    const [retail, food, ecomm] = await Promise.all([
+      fetchFredSeries("RSXFS", fredKey),
+      fetchFredSeries("RSFSDP", fredKey),
+      fetchFredSeries("ECOMSA", fredKey),
+    ]);
 
     const retailData = `
-U.S. Census Bureau Advance Monthly Retail Trade Report — March 2026:
-- Total retail & food services sales: $724.1 billion, up 1.9% from February 2026
-- Year-over-year growth: +4.2%
-- Nonstore retailers (e-commerce): +10.1% year-over-year — strongest category
-- Food services & drinking places: +6.3% year-over-year
-- Motor vehicle & parts dealers: +2.1% month-over-month
-- Gasoline stations: +3.2% month-over-month (largely price-driven)
-- Clothing & accessory stores: -0.4% month-over-month
-- Furniture & home furnishings: -1.2% month-over-month
-- Health & personal care stores: +2.8% year-over-year
-- Electronics & appliance stores: +0.6% month-over-month
-- Food & beverage stores: +1.1% month-over-month
-- Next release: April 2026 data on May 14, 2026 at 8:30 AM EDT
+Live FRED Retail Data:
+- Total Retail & Food Services Sales: $${retail?.latest}B (${retail?.change > 0 ? "+" : ""}${retail?.change}% vs prior period) as of ${retail?.date}
+- Food Services & Drinking Places: $${food?.latest}B (${food?.change > 0 ? "+" : ""}${food?.change}% vs prior period) as of ${food?.date}
+- E-Commerce Sales: $${ecomm?.latest}B (${ecomm?.change > 0 ? "+" : ""}${ecomm?.change}% vs prior period) as of ${ecomm?.date}
 `;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -46,12 +55,10 @@ ${retailData}`
     });
 
     const data = await response.json();
-    if (data.error) {
-      return NextResponse.json({ error: data.error.message }, { status: 500 });
-    }
+    if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
 
     const script = data.content.map((b) => b.text || "").join("\n");
-    return NextResponse.json({ script });
+    return NextResponse.json({ script, retailData });
 
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
