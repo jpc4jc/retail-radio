@@ -13,11 +13,11 @@ async function fetchFredSeries(seriesId, apiKey) {
 
 export async function POST() {
   try {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const fredKey = process.env.FRED_API_KEY;
     const elevenKey = process.env.ELEVENLABS_API_KEY;
 
-    if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured." }, { status: 500 });
+    if (!anthropicKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured." }, { status: 500 });
     if (!fredKey) return NextResponse.json({ error: "FRED_API_KEY not configured." }, { status: 500 });
 
     const [retail, food, ecomm] = await Promise.all([
@@ -37,7 +37,7 @@ Live FRED Retail Data:
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey,
+        "x-api-key": anthropicKey,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -59,9 +59,8 @@ ${retailData}`
     if (scriptData.error) return NextResponse.json({ error: scriptData.error.message }, { status: 500 });
     const script = scriptData.content.map((b) => b.text || "").join("\n");
 
-if (!ttsRes.ok) {
-      const errText = await ttsRes.text();
-      return NextResponse.json({ script, audio: null, ttsError: errText });
+    if (!elevenKey) {
+      return NextResponse.json({ script, audio: null, ttsError: "No ElevenLabs key" });
     }
 
     const ttsRes = await fetch("https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM", {
@@ -78,7 +77,8 @@ if (!ttsRes.ok) {
     });
 
     if (!ttsRes.ok) {
-      return NextResponse.json({ script, audio: null });
+      const errText = await ttsRes.text();
+      return NextResponse.json({ script, audio: null, ttsError: errText });
     }
 
     const audioBuffer = await ttsRes.arrayBuffer();
