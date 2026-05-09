@@ -12,7 +12,7 @@ const styles = `
   .live-badge { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1.2s ease-in-out infinite; }
   @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
-  .hero { padding: 48px 0 32px; }
+  .hero { padding: 48px 0 32px; text-align: center; }
   .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(56px, 9vw, 96px); line-height: 0.92; letter-spacing: 2px; }
   .hero h1 span { color: var(--accent); }
   .hero-sub { margin-top: 16px; font-size: 15px; color: var(--muted); font-weight: 300; line-height: 1.6; }
@@ -54,8 +54,8 @@ const styles = `
   .btn-primary:disabled { background: #333; color: #555; cursor: not-allowed; }
   .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
   .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
-  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
+  .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; text-align: center; }
   .voice-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #4DFF91; letter-spacing: 2px; margin-top: 6px; text-align: center; }
 `;
 
