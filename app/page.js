@@ -33,7 +33,8 @@ const styles = `
   .script-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
   .script-text { font-size: 15px; color: #ccc; line-height: 1.8; white-space: pre-wrap; }
   .script-placeholder { color: #444; font-style: italic; font-size: 14px; }
-  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 32px; }
+  .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; justify-content: center; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; flex: 1 1 150px; max-width: 180px; }
   .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; }
   .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
   .kpi-val { font-size: 22px; font-weight: 500; color: var(--text); }
