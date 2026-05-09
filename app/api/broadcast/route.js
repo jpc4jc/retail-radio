@@ -15,6 +15,7 @@ export async function POST() {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     const fredKey = process.env.FRED_API_KEY;
+    const elevenKey = process.env.ELEVENLABS_API_KEY;
 
     if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured." }, { status: 500 });
     if (!fredKey) return NextResponse.json({ error: "FRED_API_KEY not configured." }, { status: 500 });
@@ -32,7 +33,7 @@ Live FRED Retail Data:
 - E-Commerce Sales: $${ecomm?.latest}B (${ecomm?.change > 0 ? "+" : ""}${ecomm?.change}% vs prior period) as of ${ecomm?.date}
 `;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const scriptRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -54,11 +55,34 @@ ${retailData}`
       }),
     });
 
-    const data = await response.json();
-    if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
+    const scriptData = await scriptRes.json();
+    if (scriptData.error) return NextResponse.json({ error: scriptData.error.message }, { status: 500 });
+    const script = scriptData.content.map((b) => b.text || "").join("\n");
 
-    const script = data.content.map((b) => b.text || "").join("\n");
-    return NextResponse.json({ script, retailData });
+    if (!elevenKey) {
+      return NextResponse.json({ script, audio: null });
+    }
+
+    const ttsRes = await fetch("https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "xi-api-key": elevenKey,
+      },
+      body: JSON.stringify({
+        text: script,
+        model_id: "eleven_monolingual_v1",
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+      }),
+    });
+
+    if (!ttsRes.ok) {
+      return NextResponse.json({ script, audio: null });
+    }
+
+    const audioBuffer = await ttsRes.arrayBuffer();
+    const audioBase64 = Buffer.from(audioBuffer).toString("base64");
+    return NextResponse.json({ script, audio: audioBase64 });
 
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
