@@ -8,7 +8,8 @@ async function fetchFredSeries(seriesId, apiKey) {
   const latest = parseFloat(data.observations[0].value);
   const prior = parseFloat(data.observations[1].value);
   const change = (((latest - prior) / prior) * 100).toFixed(1);
-  return { latest: latest.toFixed(1), change, date: data.observations[0].date };
+  const formatted = latest > 1000 ? (latest / 1000).toFixed(1) + "T" : latest.toFixed(1);
+  return { latest: formatted, change, date: data.observations[0].date };
 }
 
 export async function GET() {
