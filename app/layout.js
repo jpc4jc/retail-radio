@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Retail Radio — AI-Powered Market Broadcasts",
+  title: "Retail Radio — AI Market Broadcasts",
   description: "AI-generated retail market analysis, written and broadcast in seconds.",
 };
 
