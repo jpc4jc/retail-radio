@@ -63,7 +63,7 @@ ${retailData}`
       return NextResponse.json({ script, audio: null, ttsError: "No ElevenLabs key" });
     }
 
-    const ttsRes = await fetch("https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM", {
+    const ttsRes = await fetch("https://api.elevenlabs.io/v1/text-to-speech/sggRPeVfhFx0viuebSGP", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
