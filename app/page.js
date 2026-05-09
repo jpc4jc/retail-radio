@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -38,6 +38,7 @@ const styles = `
   .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
   .kpi-val { font-size: 22px; font-weight: 500; color: var(--text); }
   .kpi-change { font-size: 12px; margin-top: 2px; }
+  .kpi-date { font-size: 10px; color: #555; margin-top: 3px; font-family: 'DM Mono', monospace; }
   .up { color: #4DFF91; }
   .down { color: var(--accent); }
   .ticker-wrap { overflow: hidden; border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 32px; }
@@ -54,26 +55,15 @@ const styles = `
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; }
   .voice-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #4DFF91; letter-spacing: 2px; margin-top: 6px; }
+  .kpi-loading { color: #444; font-size: 18px; }
 `;
 
-const kpis = [
-  { label: "Total Retail (Mar)", val: "$724.1B", change: "▲ +1.9% MoM", up: true },
-  { label: "Year-over-Year", val: "+4.2%", change: "▲ vs last year", up: true },
-  { label: "E-Commerce", val: "+10.1%", change: "▲ YoY leader", up: true },
-  { label: "Food Services", val: "+6.3%", change: "▲ YoY", up: true },
-];
-
 const tickerItems = [
-  ["Total Retail", "$724.1B", "+1.9% MoM"],
-  ["E-Commerce", "+10.1% YoY", "leading all categories"],
-  ["Food Services", "+6.3% YoY", "strong momentum"],
-  ["Auto Dealers", "+2.1% MoM", "steady"],
-  ["Clothing", "-0.4% MoM", "soft month"],
-  ["Gas Stations", "+3.2% MoM", "price-driven"],
-  ["Grocery", "+1.1% MoM", "stable"],
-  ["Health & Personal Care", "+2.8% YoY", "resilient"],
-  ["Furniture", "-1.2% MoM", "weakness"],
-  ["Electronics", "+0.6% MoM", "modest gains"],
+  ["Total Retail", "loading...", ""],
+  ["E-Commerce", "loading...", ""],
+  ["Food Services", "loading...", ""],
+  ["Consumer Confidence", "loading...", ""],
+  ["Consumer Spending", "loading...", ""],
 ];
 
 const bars = Array.from({ length: 52 }, () => Math.random() * 30 + 8);
@@ -93,9 +83,28 @@ export default function HomePage() {
   const [useElevenLabs, setUseElevenLabs] = useState(false);
   const [progress, setProgress] = useState(0);
   const [timeDisplay, setTimeDisplay] = useState("0:00 / 0:00");
+  const [kpis, setKpis] = useState(null);
+  const [ticker, setTicker] = useState(tickerItems);
   const audioRef = useRef(null);
   const audioBase64Ref = useRef(null);
-  const animRef = useRef(null);
+
+  useEffect(() => {
+    fetch("/api/kpis")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.kpis) {
+          setKpis(data.kpis);
+          setTicker([
+            ["Total Retail", data.kpis[0].val, data.kpis[0].change],
+            ["E-Commerce", data.kpis[2].val, data.kpis[2].change],
+            ["Food Services", data.kpis[1].val, data.kpis[1].change],
+            ["Consumer Confidence", data.kpis[3].val, data.kpis[3].change],
+            ["Consumer Spending", data.kpis[4].val, data.kpis[4].change],
+          ]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const generate = async () => {
     setLoading(true);
@@ -128,13 +137,11 @@ export default function HomePage() {
 
   const speak = () => {
     if (!generated) return;
-
     if (useElevenLabs && audioBase64Ref.current) {
       if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
         setSpeaking(false);
         setStatus("Paused.");
-        cancelAnimationFrame(animRef.current);
         return;
       }
       if (!audioRef.current) {
@@ -150,7 +157,6 @@ export default function HomePage() {
           setSpeaking(false);
           setStatus("Broadcast complete.");
           setProgress(0);
-          cancelAnimationFrame(animRef.current);
         });
       }
       audioRef.current.play();
@@ -158,7 +164,6 @@ export default function HomePage() {
       setStatus("On air...");
       return;
     }
-
     if (speaking) {
       window.speechSynthesis.cancel();
       setSpeaking(false);
@@ -178,6 +183,16 @@ export default function HomePage() {
     if (script) { navigator.clipboard.writeText(script); setStatus("Script copied to clipboard."); }
   };
 
+  const defaultKpis = [
+    { label: "Total Retail", val: "—", change: "", date: "" },
+    { label: "Food Services", val: "—", change: "", date: "" },
+    { label: "E-Commerce", val: "—", change: "", date: "" },
+    { label: "Consumer Confidence", val: "—", change: "", date: "" },
+    { label: "Consumer Spending", val: "—", change: "", date: "" },
+  ];
+
+  const displayKpis = kpis || defaultKpis;
+
   return (
     <>
       <style>{styles}</style>
@@ -192,18 +207,19 @@ export default function HomePage() {
         </section>
         <div className="divider" />
         <div className="kpi-row">
-          {kpis.map((k, i) => (
+          {displayKpis.map((k, i) => (
             <div className="kpi" key={i}>
               <div className="kpi-label">{k.label}</div>
-              <div className="kpi-val">{k.val}</div>
-              <div className={"kpi-change " + (k.up ? "up" : "down")}>{k.change}</div>
+              <div className="kpi-val">{k.val === "—" ? <span className="kpi-loading">—</span> : k.val}</div>
+              {k.change && <div className={"kpi-change " + (k.change.startsWith("+") ? "up" : "down")}>{k.change.startsWith("+") ? "▲" : "▼"} {k.change}</div>}
+              {k.date && <div className="kpi-date">{k.date}</div>}
             </div>
           ))}
         </div>
         <div className="ticker-wrap">
           <div className="ticker">
-            {[...tickerItems, ...tickerItems].map(([cat, val, note], i) => (
-              <div className="ticker-item" key={i}>{cat}: <span>{val}</span> — {note}</div>
+            {[...ticker, ...ticker].map(([cat, val, note], i) => (
+              <div className="ticker-item" key={i}>{cat}: <span>{val}</span>{note ? ` — ${note}` : ""}</div>
             ))}
           </div>
         </div>
