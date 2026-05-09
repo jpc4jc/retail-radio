@@ -20,17 +20,28 @@ export async function POST() {
     if (!anthropicKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured." }, { status: 500 });
     if (!fredKey) return NextResponse.json({ error: "FRED_API_KEY not configured." }, { status: 500 });
 
-    const [retail, food, ecomm] = await Promise.all([
+    const [retail, food, ecomm, confidence, spending] = await Promise.all([
       fetchFredSeries("RSXFS", fredKey),
       fetchFredSeries("RSFSDP", fredKey),
       fetchFredSeries("ECOMSA", fredKey),
+      fetchFredSeries("UMCSENT", fredKey),
+      fetchFredSeries("PCE", fredKey),
     ]);
 
     const retailData = `
-Live FRED Retail Data:
+Live Economic Data from FRED:
+
+RETAIL SALES (Census Bureau):
 - Total Retail & Food Services Sales: $${retail?.latest}B (${retail?.change > 0 ? "+" : ""}${retail?.change}% vs prior period) as of ${retail?.date}
 - Food Services & Drinking Places: $${food?.latest}B (${food?.change > 0 ? "+" : ""}${food?.change}% vs prior period) as of ${food?.date}
 - E-Commerce Sales: $${ecomm?.latest}B (${ecomm?.change > 0 ? "+" : ""}${ecomm?.change}% vs prior period) as of ${ecomm?.date}
+
+CONSUMER CONFIDENCE (University of Michigan Sentiment Index):
+- Current Reading: ${confidence?.latest} (${confidence?.change > 0 ? "+" : ""}${confidence?.change}% vs prior period) as of ${confidence?.date}
+- Note: Index above 80 indicates strong confidence; below 70 signals weakness
+
+CONSUMER SPENDING (Bureau of Economic Analysis - Personal Consumption Expenditures):
+- PCE: $${spending?.latest}B (${spending?.change > 0 ? "+" : ""}${spending?.change}% vs prior period) as of ${spending?.date}
 `;
 
     const scriptRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -45,9 +56,9 @@ Live FRED Retail Data:
         max_tokens: 1000,
         messages: [{
           role: "user",
-          content: `You are a professional radio news anchor for a financial news station called Retail Radio. Write a 60-90 second broadcast script (approximately 150-200 words) analyzing the latest U.S. retail sales data below.
+          content: `You are a professional radio news anchor for a financial news station called Retail Radio. Write a 60-90 second broadcast script (approximately 150-200 words) analyzing the latest U.S. retail and consumer economic data below.
 
-Write in a conversational, broadcast style as if speaking live on air. Start with a strong opening line that hooks the listener. Include 2-3 key insights with context. End with a forward-looking statement about what to watch next. Do NOT include stage directions, sound effects, anchor names, or any formatting — just the spoken words as plain paragraphs.
+Write in a conversational, broadcast style as if speaking live on air. Start with a strong opening line that hooks the listener. Weave together the retail sales, consumer confidence, and consumer spending data into a cohesive narrative. End with a forward-looking statement about what to watch next. Do NOT include stage directions, sound effects, anchor names, or any formatting — just the spoken words as plain paragraphs.
 
 Data:
 ${retailData}`
@@ -63,7 +74,7 @@ ${retailData}`
       return NextResponse.json({ script, audio: null, ttsError: "No ElevenLabs key" });
     }
 
-    const ttsRes = await fetch("https://api.elevenlabs.io/v1/text-to-speech/sggRPeVfhFx0viuebSGP", {
+    const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM"}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
