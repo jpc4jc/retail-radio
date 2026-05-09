@@ -34,8 +34,9 @@ const styles = `
   .script-text { font-size: 15px; color: #ccc; line-height: 1.8; white-space: pre-wrap; }
   .script-placeholder { color: #444; font-style: italic; font-size: 14px; }
   .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; justify-content: center; }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; flex: 1 1 150px; max-width: 180px; }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; }
+  .kpi-top { display: flex; gap: 10px; justify-content: center; width: 100%; }
+  .kpi-bottom { display: flex; gap: 10px; justify-content: center; width: 100%; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; width: 185px; flex-shrink: 0; }
   .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
   .kpi-val { font-size: 22px; font-weight: 500; color: var(--text); }
   .kpi-change { font-size: 12px; margin-top: 2px; }
@@ -56,16 +57,7 @@ const styles = `
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; }
   .voice-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #4DFF91; letter-spacing: 2px; margin-top: 6px; }
-  .kpi-loading { color: #444; font-size: 18px; }
 `;
-
-const tickerItems = [
-  ["Total Retail", "loading...", ""],
-  ["E-Commerce", "loading...", ""],
-  ["Food Services", "loading...", ""],
-  ["Consumer Confidence", "loading...", ""],
-  ["Consumer Spending", "loading...", ""],
-];
 
 const bars = Array.from({ length: 52 }, () => Math.random() * 30 + 8);
 
@@ -85,7 +77,13 @@ export default function HomePage() {
   const [progress, setProgress] = useState(0);
   const [timeDisplay, setTimeDisplay] = useState("0:00 / 0:00");
   const [kpis, setKpis] = useState(null);
-  const [ticker, setTicker] = useState(tickerItems);
+  const [ticker, setTicker] = useState([
+    ["Total Retail", "loading...", ""],
+    ["E-Commerce", "loading...", ""],
+    ["Food Services", "loading...", ""],
+    ["Consumer Confidence", "loading...", ""],
+    ["Consumer Spending", "loading...", ""],
+  ]);
   const audioRef = useRef(null);
   const audioBase64Ref = useRef(null);
 
@@ -194,6 +192,15 @@ export default function HomePage() {
 
   const displayKpis = kpis || defaultKpis;
 
+  const KpiCard = ({ k }) => (
+    <div className="kpi">
+      <div className="kpi-label">{k.label}</div>
+      <div className="kpi-val">{k.val}</div>
+      {k.change && <div className={"kpi-change " + (k.change.startsWith("+") ? "up" : "down")}>{k.change.startsWith("+") ? "▲" : "▼"} {k.change}</div>}
+      {k.date && <div className="kpi-date">{k.date}</div>}
+    </div>
+  );
+
   return (
     <>
       <style>{styles}</style>
@@ -208,14 +215,12 @@ export default function HomePage() {
         </section>
         <div className="divider" />
         <div className="kpi-row">
-          {displayKpis.map((k, i) => (
-            <div className="kpi" key={i}>
-              <div className="kpi-label">{k.label}</div>
-              <div className="kpi-val">{k.val === "—" ? <span className="kpi-loading">—</span> : k.val}</div>
-              {k.change && <div className={"kpi-change " + (k.change.startsWith("+") ? "up" : "down")}>{k.change.startsWith("+") ? "▲" : "▼"} {k.change}</div>}
-              {k.date && <div className="kpi-date">{k.date}</div>}
-            </div>
-          ))}
+          <div className="kpi-top">
+            {displayKpis.slice(0, 3).map((k, i) => <KpiCard key={i} k={k} />)}
+          </div>
+          <div className="kpi-bottom">
+            {displayKpis.slice(3, 5).map((k, i) => <KpiCard key={i} k={k} />)}
+          </div>
         </div>
         <div className="ticker-wrap">
           <div className="ticker">
