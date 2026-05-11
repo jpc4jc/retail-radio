@@ -37,7 +37,7 @@ const styles = `
   .kpi-section-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #555; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; text-align: center; }
   .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px; }
   .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; width: 170px; flex-shrink: 0; }
-  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-align: center; }
+  .kpi-label { font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-align: center; }
   .kpi-val { font-size: 20px; font-weight: 500; color: var(--text); text-align: center; }
   .kpi-change { font-size: 12px; margin-top: 2px; text-align: center; }
   .kpi-date { font-size: 10px; color: #555; margin-top: 3px; font-family: 'DM Mono', monospace; text-align: center; }
