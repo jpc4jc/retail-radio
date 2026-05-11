@@ -9,7 +9,7 @@ async function fetchFredSeries(seriesId, apiKey) {
     const latest = parseFloat(data.observations[0].value);
     const prior = parseFloat(data.observations[1].value);
     const change = (((latest - prior) / prior) * 100).toFixed(1);
-    const formatted = (latest / 1000).toFixed(1);
+    const formatted = latest.toFixed(1);
     return { latest: formatted, raw: latest, change, date: data.observations[0].date };
   } catch {
     return null;
