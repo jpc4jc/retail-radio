@@ -44,7 +44,7 @@ const styles = `
   .up { color: #4DFF91; }
   .down { color: var(--accent); }
   .ticker-wrap { overflow: hidden; border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 32px; }
-  .ticker { display: flex; gap: 40px; white-space: nowrap; animation: scroll 36s linear infinite; }
+  .ticker { display: flex; gap: 40px; white-space: nowrap; animation: scroll 24s linear infinite; }
   .ticker-item { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
   .ticker-item span { color: var(--text); font-weight: 500; }
   @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
@@ -96,10 +96,8 @@ export default function HomePage() {
     fetch("/api/kpis")
       .then((r) => r.json())
       .then((data) => {
-        if (data.kpis) {
-          setKpis(data.kpis);
-          setTicker(data.kpis.map(k => [k.label, k.val, k.change]));
-        }
+        if (data.kpis) setKpis(data.kpis);
+        if (data.ticker) setTicker(data.ticker);
       })
       .catch(() => {});
   }, []);
@@ -214,8 +212,10 @@ export default function HomePage() {
 
         <div className="ticker-wrap">
           <div className="ticker">
-            {ticker.length > 0 && [...ticker, ...ticker].map(([cat, val, note], i) => (
-              <div className="ticker-item" key={i}>{cat}: <span>{val}</span>{note ? ` — ${note}` : ""}</div>
+            {ticker.length > 0 && [...ticker, ...ticker].map((item, i) => (
+              <div className="ticker-item" key={i}>
+                {item.label}: <span>{item.val}</span>{item.change ? ` — ${item.change}` : ""}
+              </div>
             ))}
           </div>
         </div>
