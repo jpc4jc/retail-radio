@@ -44,7 +44,7 @@ const styles = `
   .up { color: #4DFF91; }
   .down { color: var(--accent); }
   .ticker-wrap { overflow: hidden; border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 32px; }
-  .ticker { display: flex; gap: 40px; white-space: nowrap; animation: scroll 24s linear infinite; }
+  .ticker { display: flex; gap: 40px; white-space: nowrap; animation: scroll 12s linear infinite; }
   .ticker-item { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
   .ticker-item span { color: var(--text); font-weight: 500; }
   @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
